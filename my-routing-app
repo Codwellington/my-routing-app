@@ -1,0 +1,106 @@
+import React, { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+
+const options = ["Serviced", "Misplaced", "Not Out"];
+
+export default function CustomRectangles() {
+  const [numRectangles, setNumRectangles] = useState(3);
+  const [rectangles, setRectangles] = useState(
+    Array.from({ length: numRectangles }, (_, i) => ({ id: i + 1, name: `Rectangle ${i + 1}`, status: null }))
+  );
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const rectangleRefs = useRef([]);
+
+  useEffect(() => {
+    if (rectangleRefs.current[currentIndex]) {
+      rectangleRefs.current[currentIndex].scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (rectangles.every(rect => rect.status !== null)) {
+      setTimeout(() => resetProgram(), 1000);
+    }
+  }, [rectangles]);
+
+  const handleOptionClick = (option) => {
+    const newRectangles = [...rectangles];
+    newRectangles[currentIndex].status = option;
+    setRectangles(newRectangles);
+    if (currentIndex < rectangles.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const resetProgram = () => {
+    setCurrentIndex(0);
+    setRectangles(rectangles.map(rect => ({ ...rect, status: null })));
+  };
+
+  const changeRectangleName = (index, newName) => {
+    const newRectangles = [...rectangles];
+    newRectangles[index].name = newName;
+    setRectangles(newRectangles);
+  };
+
+  const updateNumRectangles = (num) => {
+    setNumRectangles(num);
+    setRectangles(prevRectangles => {
+      const newRectangles = Array.from({ length: num }, (_, i) =>
+        prevRectangles[i] ? prevRectangles[i] : { id: i + 1, name: `Rectangle ${i + 1}`, status: null }
+      );
+      return newRectangles;
+    });
+    setCurrentIndex(0);
+  };
+
+  return (
+    <div className="p-4">
+      <Button className="absolute top-4 right-4" onClick={resetProgram}>
+        Reset
+      </Button>
+      <input
+        type="number"
+        min="1"
+        value={numRectangles}
+        onChange={(e) => updateNumRectangles(Number(e.target.value))}
+        className="mb-4 p-2 border"
+      />
+      <div className="flex flex-col items-center gap-4">
+        {rectangles.map((rect, index) => (
+          <div
+            key={rect.id}
+            ref={(el) => (rectangleRefs.current[index] = el)}
+            className={`w-96 h-32 flex flex-col items-center justify-center border-2 rounded-lg ${
+              index === currentIndex ? "bg-blue-300" : "bg-gray-200"
+            }`}
+          >
+            <input
+              type="text"
+              value={rect.name}
+              onChange={(e) => changeRectangleName(index, e.target.value)}
+              className="mb-2 p-1 border rounded"
+              disabled={index !== currentIndex}
+            />
+            {index === currentIndex ? (
+              <div className="flex flex-col items-center">
+                <div className="flex gap-2 mt-2">
+                  {options.map((option) => (
+                    <Button key={option} onClick={() => handleOptionClick(option)} className="text-sm p-1">
+                      {option}
+                    </Button>
+                  ))}
+                </div>
+                <Button onClick={() => handleOptionClick("Operator Error")} className="text-sm p-1 mt-2">
+                  Operator Error
+                </Button>
+              </div>
+            ) : (
+              <p>{rect.status || "Pending"}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
